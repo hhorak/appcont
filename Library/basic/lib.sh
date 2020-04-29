@@ -44,7 +44,7 @@ that are part of the RHSCL, RHEL or Fedora products.
 # For some environments, different registry can be used
 CONTAINER_REGISTRY_FLAT_NAMESPACE=0
 CONTAINER_REGISTRY_INSECURE=0
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-registry.access.redhat.com}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-registry.access.redhat.com/}
 
 # adds internal registry for podman or docker
 appcont_basic__add_insecure_registry() {
@@ -63,14 +63,14 @@ appcont_basic__get_docker() {
     7*)
       # extras needed for docker package
       yum-config-manager --enable rhel-7-server-extras-rpms
-      yum install -y --enablerepo=epel docker golang-github-cpuguy83-go-md2man
+      yum install -y docker
 
       appcont_basic__add_insecure_registry
       systemctl restart docker
     ;;
     *)
       # rhel-8 and fedora
-      yum install -y podman podman-docker golang-github-cpuguy83-go-md2man
+      yum install -y podman podman-docker
       appcont_basic__add_insecure_registry
     ;;
   esac
@@ -99,24 +99,19 @@ appcont_basic__get_os_name() {
 
 # parses the parent image from a Dockerfile and pulls it
 appcont_basic__get_parent_image() {
+  local registry=''
   parent_image=$(grep ^FROM Dockerfile | sed -e 's/FROM\s*//')
+  if ! echo "$parent_image" | grep -q -e '.*/.*/.*' ; then
+    # it looks like the registry is not part of the parent name
+    registry="${CONTAINER_REGISTRY}"
+  fi
   if [ "${CONTAINER_REGISTRY_FLAT_NAMESPACE:-0}" -eq 1 ] ; then
-    parent_image_full=${CONTAINER_REGISTRY}${parent_image//\//-}
+    parent_image_full=${registry}${parent_image//\//-}
   else
-    parent_image_full=${CONTAINER_REGISTRY}${parent_image}
+    parent_image_full=${registry}${parent_image}
   fi
   docker pull ${parent_image_full}
   docker tag ${parent_image_full} ${parent_image}
-}
-
-# prepares a Dockerfile into a new file Dockerfile.tempcopy in CWD
-appcont_basic__prepare_dockerfile_rebuild() {
-  cat Dockerfile > Dockerfile.tempcopy
-  appcont_basic__prepare_repo_dir_for_dockerfile ./temp_repos Dockerfile.tempcopy
-
-  echo "Generating help.1 from README.md and storing into /help.1"
-  go-md2man -in "README.md" -out "help.1"
-  echo "ADD help.1 /help.1" >> Dockerfile.tempcopy
 }
 
 appcont_basic__prepare_repo_dir_for_dockerfile() {
@@ -133,6 +128,16 @@ ENV SKIP_REPOS_DISABLE=true SKIP_REPOS_ENABLE=true" "${output_dockerfile}"
 ADD ${output_dir}/$(basename $repo_file) $repo_file" "${output_dockerfile}"
     cat "$repo_file" >> "${output_dir}"/"$(basename $repo_file)"
   done
+}
+
+# prepares a Dockerfile into a new file Dockerfile.tempcopy in CWD
+appcont_basic__prepare_dockerfile_rebuild() {
+  cat Dockerfile > Dockerfile.tempcopy
+  appcont_basic__prepare_repo_dir_for_dockerfile ./temp_repos Dockerfile.tempcopy
+
+  echo "Generating help.1 from README.md and storing into /help.1"
+  cat README.md | docker run -i --rm quay.io/hhorak/md2man >help.1
+  echo "ADD help.1 /help.1" >> Dockerfile.tempcopy
 }
 
 # prepares a Dockerfile for the updated use case
