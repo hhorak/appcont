@@ -4,6 +4,7 @@ Few thoughts this library is designed with:
 
 * The library should work for RHSCL, RHEL and Fedora images
 * For RHSCL and RHEL images, some environment variables need to be re-defined by the test case itself
+* The packages we work with are coming from the host repositories (these repos are coppied to the container)
 * We cover the following two use cases:
   1. Build an image from source and run the tests from the git repo
   1. Take the last released image, update the package we test and then run the tests from the git repo
@@ -31,7 +32,7 @@ rlJournalStart
         [ -f container-env.sh ] && source container-env.sh
 
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        rlRun "git clone CONTAINER_SOURCES '${TmpDir}'" 0 "Getting container image sources"
+        rlRun "git clone $CONTAINER_SOURCES '${TmpDir}'" 0 "Getting container image sources"
         rlRun "pushd $TmpDir"
 
         rlRun "git checkout $(get_branch_name)" 0 "Switch branch"
