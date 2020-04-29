@@ -144,11 +144,15 @@ appcont_basic__prepare_dockerfile_rebuild() {
 appcont_basic__prepare_dockerfile_updated() {
   local container_name=$1
   local packages_update=$2
+  local original_user
 
   echo "FROM $container_name" > Dockerfile.tempcopy
   appcont_basic__prepare_repo_dir_for_dockerfile ./temp_repos Dockerfile.tempcopy
 
+  original_user=$(docker run -ti --rm $container_name bash -c 'id -u')
+  echo "USER 0" >> Dockerfile.tempcopy
   echo "RUN yum -y update ${packages_update} && yum -y clean all" >> Dockerfile.tempcopy
+  echo "USER ${original_user}" >> Dockerfile.tempcopy
 }
 
 
