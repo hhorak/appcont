@@ -42,9 +42,9 @@ that are part of the RHSCL, RHEL or Fedora products.
 =cut
 
 # For some environments, different registry can be used
-CONTAINER_REGISTRY_FLAT_NAMESPACE=0
-CONTAINER_REGISTRY_INSECURE=0
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-registry.access.redhat.com/}
+export CONTAINER_REGISTRY_FLAT_NAMESPACE=0
+export CONTAINER_REGISTRY_INSECURE=0
+export CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-registry.access.redhat.com/}
 
 # adds internal registry for podman or docker
 appcont_basic__add_insecure_registry() {
