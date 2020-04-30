@@ -101,7 +101,7 @@ appcont_basic__get_os_name() {
 appcont_basic__get_parent_image() {
   local registry=''
   parent_image=$(grep ^FROM Dockerfile | sed -e 's/FROM\s*//')
-  if ! echo "$parent_image" | grep -q -e '.*/.*/.*' ; then
+  if ! echo "$parent_image" | grep -q -e '.*/.*/.*' -e registry ; then
     # it looks like the registry is not part of the parent name
     registry="${CONTAINER_REGISTRY}"
   fi
