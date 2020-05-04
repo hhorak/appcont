@@ -166,13 +166,16 @@ appcont_basic__prepare_dockerfile_updated() {
   local packages_update=$2
   local original_user
 
-  original_user=$(docker run -ti --rm $container_name bash -c 'id -u')
-
   echo "FROM $container_name" > Dockerfile.tempcopy
   echo "USER 0" >> Dockerfile.tempcopy
   appcont_basic__prepare_repo_dir_for_dockerfile ./temp_repos Dockerfile.tempcopy
 
   echo "RUN yum -y update ${packages_update} && yum -y clean all" >> Dockerfile.tempcopy
+
+  # we need to pull and tag the parent to be able to get the original ID
+  appcont_basic__get_parent_image Dockerfile.tempcopy
+  original_user=$(docker run -ti --rm $container_name bash -c 'id -u')
+
   echo "USER ${original_user}" >> Dockerfile.tempcopy
 }
 
