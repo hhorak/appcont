@@ -128,6 +128,23 @@ ENV SKIP_REPOS_DISABLE=true SKIP_REPOS_ENABLE=true" "${output_dockerfile}"
 ADD ${output_dir}/$(basename $repo_file) $repo_file" "${output_dockerfile}"
     cat "$repo_file" >> "${output_dir}"/"$(basename $repo_file)"
   done
+
+  # Since some packages we touch using yum (reinstall or install other
+  # sub-packages from the same SRPM) might be coming from previously
+  # shipped RPMs, we need to make sure all the previously released RPMs
+  # are available
+  # (otherwise we can see an error like in case of postgresql container
+  # which reinstalls tzdata, if the installed NVR is not available in
+  # the repos)
+  local version_id=$(source /etc/os-release ; echo $VERSION_ID)
+  case ${version_id} in
+    7*) sed -i -e "/^FROM/ a\
+ADD http://git.app.eng.bos.redhat.com/git/RH_Software_Collections.git/plain/Containers/osbs-repos-signed-pkgs/rhel-7-rhscl-public.repo /etc/yum.repos.d/rhel-7-rhscl-public.repo" "${output_dockerfile}"
+        ;;
+    8*) sed -i -e "/^FROM/ a\
+ADD http://git.app.eng.bos.redhat.com/git/RH_Software_Collections.git/plain/Containers/osbs-repos-signed-pkgs/pulp-rhel8.repo /etc/yum.repos.d/pulp-rhel8.repo" "${output_dockerfile}"
+        ;;
+  esac
 }
 
 # prepares a Dockerfile into a new file Dockerfile.tempcopy in CWD
