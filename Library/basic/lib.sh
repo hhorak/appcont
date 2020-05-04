@@ -95,6 +95,7 @@ appcont_basic__get_os_name() {
     8*) OS=rhel8 ;;
     *) OS=fedora ;;
   esac
+  export OS
 }
 
 # parses the parent image from a Dockerfile and pulls it
